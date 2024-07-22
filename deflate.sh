@@ -1,5 +1,13 @@
 #!/bin/sh
 
+on_macOS() {
+	if [ "$(uname)" = "Darwin" ] then
+		return 0
+	else
+		return 1
+	fi
+}
+
 print_usage() {
 	echo ""
 	echo "Usage: $0 <target_size> <video_file>"
@@ -23,6 +31,7 @@ check_dependencies() {
 	if ! command -v bc >/dev/null 2>&1; then
 		echo "bc is either not installed or not in the PATH."
 		echo "please install it before using this script"
+		echo "	MAC: brew install bc"
 		echo "	ARCH: pacman -S bc"
 		echo "	DEBIAN: apt install bc"
 		echo "	FEDORA: dnf install bc"
@@ -70,7 +79,13 @@ fi
 
 echo "probing..."
 VIDEO_LENGTH=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$INPUT")
-VIDEO_SIZE=$(stat -c %s "$INPUT")
+
+if on_macOS; then
+	VIDEO_SIZE=$(stat -f %z "$INPUT")
+else
+	VIDEO_SIZE=$(stat -c %s "$INPUT")
+fi
+
 TARGETSIZE_VALUE=$(echo "$TARGETSIZE" | sed 's/[^0-9.]*//g')
 TARGETSIZE_UNIT=$(echo "$TARGETSIZE" | sed 's/[0-9.]*//g')
 
